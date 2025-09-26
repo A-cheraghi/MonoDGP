@@ -22,6 +22,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             cls_id = int(dets[i, j, 0])
             score = dets[i, j, 1]
             score_all.append(score)
+            
             if score < threshold:
                 continue
 
