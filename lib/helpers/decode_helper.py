@@ -16,9 +16,11 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
     results = {}
     for i in range(dets.shape[0]):  # batch
         preds = []
+        print(f"image {i}")
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
             score = dets[i, j, 1]
+            print(score)
             if score < threshold:
                 continue
 
