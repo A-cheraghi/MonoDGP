@@ -211,7 +211,7 @@ class MonoDGP(nn.Module):
         logits = inter_class[-1]  # [batch, queries, num_classes]
 
         # تصویر سوم در batch
-        img_idx = 2
+        img_idx = 7
         img_coords = coords[img_idx]   # [50, 6]
         img_logits = logits[img_idx]   # [50, 3]
 
