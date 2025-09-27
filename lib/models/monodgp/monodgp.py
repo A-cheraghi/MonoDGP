@@ -207,17 +207,26 @@ class MonoDGP(nn.Module):
         inter_coord = torch.stack(inter_coords)
         inter_class = torch.stack(inter_classes)
 
-        print("inter_coord shape:", inter_coord.shape)
-        print("inter_class shape:", inter_class.shape)
+        coords = inter_coord[-1]  # [batch, queries, 6]
+        logits = inter_class[-1]  # [batch, queries, num_classes]
 
-        # Print داده‌ها برای آخرین لایه و تصویر اول
-        print("\n--- آخرین لایه ---")
-        print("Coordinates (2D + 3D params) for first image:\n", inter_coord[-1][0])
-        print("Class logits for first image:\n", inter_class[-1][0])
+        # تصویر سوم در batch
+        img_idx = 2
+        img_coords = coords[img_idx]   # [50, 6]
+        img_logits = logits[img_idx]   # [50, 3]
 
-        # اگر بخواهی probability هم داشته باشی:
-        prob_2d = torch.sigmoid(inter_class[-1][0])
-        print("Class probabilities for first image:\n", prob_2d)
+        # محاسبه probability برای کلاس خودرو (فرض کنیم ستون 1 کلاس car است)
+        probs = torch.sigmoid(img_logits[:, 1])
+
+        # مرتب سازی بر اساس probability descending
+        sorted_probs, indices = torch.sort(probs, descending=True)
+        sorted_coords = img_coords[indices]
+
+        # چاپ نتایج
+        print("Sorted probabilities (class car) for image 3:\n", sorted_probs)
+        print("\nCorresponding coordinates for image 3:\n", sorted_coords)
+
+        # اجرای فوری توقف بعد از print
         os._exit(0)
 
 
