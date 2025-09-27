@@ -3,6 +3,8 @@ import torch.nn.functional as F
 from torch import nn
 import math
 import copy
+import os
+
 
 from utils import box_ops
 from utils.misc import (NestedTensor, nested_tensor_from_tensor_list,
@@ -216,6 +218,7 @@ class MonoDGP(nn.Module):
         # اگر بخواهی probability هم داشته باشی:
         prob_2d = torch.sigmoid(inter_class[-1][0])
         print("Class probabilities for first image:\n", prob_2d)
+        os._exit(0)
 
 
 
