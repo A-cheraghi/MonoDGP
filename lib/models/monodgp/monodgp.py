@@ -205,6 +205,20 @@ class MonoDGP(nn.Module):
         inter_coord = torch.stack(inter_coords)
         inter_class = torch.stack(inter_classes)
 
+        print("inter_coord shape:", inter_coord.shape)
+        print("inter_class shape:", inter_class.shape)
+
+        # Print داده‌ها برای آخرین لایه و تصویر اول
+        print("\n--- آخرین لایه ---")
+        print("Coordinates (2D + 3D params) for first image:\n", inter_coord[-1][0])
+        print("Class logits for first image:\n", inter_class[-1][0])
+
+        # اگر بخواهی probability هم داشته باشی:
+        prob_2d = torch.sigmoid(inter_class[-1][0])
+        print("Class probabilities for first image:\n", prob_2d)
+
+
+
         query_embeds = hs_2d[-1]
         hs, init_reference, inter_references = self.det3d_transformer(intermediate_output, query_embeds, depth_pos_embed)
 
