@@ -60,7 +60,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
 
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))        
-
+        # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))        
         
         results[info['img_id'][i]] = preds
     return results
