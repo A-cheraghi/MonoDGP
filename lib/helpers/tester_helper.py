@@ -40,7 +40,7 @@ class Tester(object):
                             logger=self.logger)
             self.model.to(self.device)
             self.inference()
-            self.threshold()
+            self.evaluate()
 
         # test all checkpoints in the given dir
         elif self.cfg['mode'] == 'all' and self.train_cfg["save_all"]:
