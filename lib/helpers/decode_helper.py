@@ -59,7 +59,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         
 
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
-        print(f"image  {info['img_id'][i]}\n" , np.mean(score_all)          
+        print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))          
         
         results[info['img_id'][i]] = preds
     return results
