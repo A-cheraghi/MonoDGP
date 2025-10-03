@@ -18,6 +18,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         preds = []
 
         score_all=[]
+        clustering_features = []                    #extra
 
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
@@ -27,7 +28,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             
             if score < threshold:
                 continue
-
+                
             # 2d bboxs decoding
             x = dets[i, j, 2] * info['img_size'][i][0]
             y = dets[i, j, 3] * info['img_size'][i][1]
@@ -37,8 +38,9 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             # 3d bboxs decoding
             # depth decoding
+            max_depth = dets[i, :, 6].max()                 #extra
             depth = dets[i, j, 6]
-
+            depth_norm = depth / max_depth                  #extra
             # dimensions decoding
             dimensions = dets[i, j, 31:34]
             dimensions += cls_mean_size[int(cls_id)]
@@ -46,20 +48,33 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             # positions decoding
             x3d = dets[i, j, 34] * info['img_size'][i][0]
             y3d = dets[i, j, 35] * info['img_size'][i][1]
+            xs3d_cluster = dets[i, j, 34]                   #extra
+            y3d_cluster = dets[i, j, 35]                    #extra 
             locations = calibs[i].img_to_rect(x3d, y3d, depth).reshape(-1)
             locations[1] += dimensions[0] / 2
 
             # heading angle decoding
             alpha = get_heading_angle(dets[i, j, 7:31])
+            alpha_sin = np.sin(alpha)                   #extra
+            alpha_cos = np.cos(alpha)                   #extra
             ry = calibs[i].alpha2ry(alpha, x)
 
 
             score = score * dets[i, j, -1]
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
+            features = [xs3d_cluster, y3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
+            clustering_features.append(features)                                                        #extra
         
+        clustering_features = np.array(clustering_features)                                             #extra
+        from sklearn.cluster import DBSCAN                
+        db = DBSCAN(eps=0.1, min_samples=2)
+        cluster_labels = db.fit_predict(clustering_features)
+        print("Cluster labels for each detection:")
+        print(cluster_labels)
+
 
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
-        print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))          
+        # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))          
         
         results[info['img_id'][i]] = preds
     return results
