@@ -19,7 +19,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
         score_all=[]
         clustering_features = []                    #extra
-
+        print(get_heading_angle(dets[i, :, 7:31]) , "end\n")
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
             score = dets[i, j, 1]
@@ -54,9 +54,9 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             locations[1] += dimensions[0] / 2
 
             # heading angle decoding
-            alpha = get_heading_angle(dets[i, j, 7:31])
-            alpha_sin = np.sin(alpha)                   #extra
-            alpha_cos = np.cos(alpha)                   #extra
+            alpha = get_heading_angle(dets[i, j, 7:31]) 
+            alpha_sin = (np.sin(alpha) + 1) / 2                  #extra
+            alpha_cos = (np.cos(alpha) + 1) / 2                  #extra
             ry = calibs[i].alpha2ry(alpha, x)
 
 
