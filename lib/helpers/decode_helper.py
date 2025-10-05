@@ -65,15 +65,34 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             clustering_features.append(features)                                                        #extra
         
         clustering_features = np.array(clustering_features)                                             #extra
-        from sklearn.cluster import DBSCAN                
-        db = DBSCAN(eps=0.1, min_samples=2)
-        cluster_labels = db.fit_predict(clustering_features)
-        print("Cluster labels for each detection:")
-        print(cluster_labels)
+        # from sklearn.cluster import DBSCAN                
+        # db = DBSCAN(eps=0.1, min_samples=2)
+        # cluster_labels = db.fit_predict(clustering_features)
+        # print("Cluster labels for each detection:")
+        # print(cluster_labels)
+
+
+        # import hdbscan
+        # db = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=2)
+        # cluster_labels = db.fit_predict(clustering_features)
+        # print("Cluster labels for each detection:")
+        # print(cluster_labels)
 
 
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))          
+
+        score_all_np = np.array(score_all)
+        median_score = np.median(score_all_np)
+        mad_score = np.median(np.abs(score_all_np - median_score))
+
+        k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
+        robust_value = median_score + k * mad_score
+        print(f"image  {info['img_id'][i]} _ mean{np.mean(score_all)} _ mad{robust_value}\n")          
+
+
+
+        
         
         results[info['img_id'][i]] = preds
     return results
