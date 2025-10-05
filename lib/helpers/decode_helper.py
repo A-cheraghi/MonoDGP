@@ -48,7 +48,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             x3d = dets[i, j, 34] * info['img_size'][i][0]
             y3d = dets[i, j, 35] * info['img_size'][i][1]
             xs3d_cluster = dets[i, j, 34]                   #extra
-            y3d_cluster = dets[i, j, 35]                    #extra 
+            ys3d_cluster = dets[i, j, 35]                   #extra 
             locations = calibs[i].img_to_rect(x3d, y3d, depth).reshape(-1)
             locations[1] += dimensions[0] / 2
 
@@ -61,38 +61,31 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score = score * dets[i, j, -1]
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
-            features = [xs3d_cluster, y3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
-            clustering_features.append(features)                                                        #extra
+            features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
+            clustering_features.append(features)                                                         #extra
         
-        clustering_features = np.array(clustering_features)                                             #extra
+        clustering_features = np.array(clustering_features)                                              #extra
         # from sklearn.cluster import DBSCAN                
         # db = DBSCAN(eps=0.1, min_samples=2)
         # cluster_labels = db.fit_predict(clustering_features)
         # print("Cluster labels for each detection:")
         # print(cluster_labels)
-
-
+#####################################################
         # import hdbscan
         # db = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=2)
         # cluster_labels = db.fit_predict(clustering_features)
         # print("Cluster labels for each detection:")
         # print(cluster_labels)
-
-
+#####################################################      
+        # score_all_np = np.array(score_all)
+        # median_score = np.median(score_all_np)
+        # mad_score = np.median(np.abs(score_all_np - median_score))
+        # k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
+        # robust_value = median_score + k * mad_score
+        # print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all)} _ mad => {robust_value}\n")          
+#####################################################
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
-        # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))          
-
-        score_all_np = np.array(score_all)
-        median_score = np.median(score_all_np)
-        mad_score = np.median(np.abs(score_all_np - median_score))
-
-        k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
-        robust_value = median_score + k * mad_score
-        print(f"image  {info['img_id'][i]} _ mean{np.mean(score_all)} _ mad{robust_value}\n")          
-
-
-
-        
+        # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
         
         results[info['img_id'][i]] = preds
     return results
