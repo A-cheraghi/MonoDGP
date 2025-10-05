@@ -83,7 +83,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
         robust_value = median_score + k * mad_score
         std = np.std(score_all_np)
-        print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all)} _ mad => {robust_value} _ STD => {std}\n")          
+        print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
 #####################################################
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
