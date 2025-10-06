@@ -28,8 +28,10 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         #         threshold = mean_score
 
         if std > 0.1:
-                threshold = mean_score
-
+            new_threshold = mean_score
+        else:
+            new_threshold = threshold
+            
 
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
@@ -37,7 +39,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score_all.append(score)
             
-            if score < threshold:
+            if score < new_threshold:
                 continue
                 
             # 2d bboxs decoding
