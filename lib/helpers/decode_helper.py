@@ -21,11 +21,15 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         clustering_features = []                    #extra
         mean_score = np.mean(dets[i, :, 1])
         std = np.std(dets[i, :, 1])
-        if mean_score < 0.01:
-            threshold = 0.2
-        else:
-            if std > 0.1:
+        # if mean_score < 0.01:
+        #     threshold = 0.2
+        # else:
+        #     if std > 0.1:
+        #         threshold = mean_score
+
+        if std > 0.1:
                 threshold = mean_score
+
 
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
