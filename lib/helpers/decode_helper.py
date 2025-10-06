@@ -20,7 +20,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         score_all=[]
         clustering_features = []                    #extra
         mean_score = np.mean(dets[i, :, 1])
-
+        print(dets[i, :, 1])
+        print(mean_score)
 
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
@@ -89,7 +90,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
 #####################################################
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
-        # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
+        print("score_all =>  ",score_all)
+        print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
         
         results[info['img_id'][i]] = preds
     return results
