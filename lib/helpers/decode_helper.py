@@ -19,13 +19,16 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
         score_all=[]
         clustering_features = []                    #extra
+        mean_score = np.mean(dets[i, :, 1])
+
+
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
             score = dets[i, j, 1]
 
             score_all.append(score)
             
-            if score < threshold:
+            if score < mean_score:
                 continue
                 
             # 2d bboxs decoding
@@ -64,7 +67,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
         
-        clustering_features = np.array(clustering_features)                                              #extra
+        # clustering_features = np.array(clustering_features)                                              #extra
         # from sklearn.cluster import DBSCAN                
         # db = DBSCAN(eps=0.1, min_samples=2)
         # cluster_labels = db.fit_predict(clustering_features)
@@ -77,13 +80,13 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # print("Cluster labels for each detection:")
         # print(cluster_labels)
 #####################################################      
-        score_all_np = np.array(score_all)
-        median_score = np.median(score_all_np)
-        mad_score = np.median(np.abs(score_all_np - median_score))
-        k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
-        robust_value = median_score + k * mad_score
-        std = np.std(score_all_np)
-        print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
+        # score_all_np = np.array(score_all)
+        # median_score = np.median(score_all_np)
+        # mad_score = np.median(np.abs(score_all_np - median_score))
+        # k = 1.0  # یا 1.4826 اگر بخوای شبیه انحراف معیار باشه
+        # robust_value = median_score + k * mad_score
+        # std = np.std(score_all_np)
+        # print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
 #####################################################
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
