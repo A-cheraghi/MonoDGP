@@ -77,6 +77,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
+        filtered_preds = {}
         if len(clustering_features) >= 2:
             clustering_features = np.array(clustering_features)                                              #extra
             from sklearn.cluster import DBSCAN                
@@ -85,7 +86,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             # print("Cluster labels for each detection:")
             # print(cluster_labels)
 
-            filtered_preds = {}
+            
             if len(preds) > 0:
                 preds_np = np.array(preds, dtype=object)  # برای راحتی کار با ایندکس‌ها
                 scores = np.array([p[-1] for p in preds])  # آخرین مقدار هر pred، همون score
