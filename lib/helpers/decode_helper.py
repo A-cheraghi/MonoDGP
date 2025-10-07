@@ -78,6 +78,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
         filtered_preds = []
+        
         if len(clustering_features) >= 2:
             clustering_features = np.array(clustering_features)                                              #extra
             from sklearn.cluster import DBSCAN                
