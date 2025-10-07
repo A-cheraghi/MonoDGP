@@ -77,32 +77,32 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
-        
-        clustering_features = np.array(clustering_features)                                              #extra
-        from sklearn.cluster import DBSCAN                
-        db = DBSCAN(eps=0.1, min_samples=2)
-        cluster_labels = db.fit_predict(clustering_features)
-        print("Cluster labels for each detection:")
-        print(cluster_labels)
+        if len(clustering_features) >= 2:
+            clustering_features = np.array(clustering_features)                                              #extra
+            from sklearn.cluster import DBSCAN                
+            db = DBSCAN(eps=0.1, min_samples=2)
+            cluster_labels = db.fit_predict(clustering_features)
+            # print("Cluster labels for each detection:")
+            # print(cluster_labels)
 
-        filtered_preds = []
-        if len(preds) > 0:
-            preds_np = np.array(preds, dtype=object)  # برای راحتی کار با ایندکس‌ها
-            scores = np.array([p[-1] for p in preds])  # آخرین مقدار هر pred، همون score
-            unique_clusters = np.unique(cluster_labels)
-            for cid in unique_clusters:
-                idxs = np.where(cluster_labels == cid)[0]
-                if len(idxs) == 0:
-                    continue
-                if cid == -1:
-                    # نویز DBSCAN، معمولاً اعضای تک‌تایی — همه رو نگه می‌داریم
-                    for idx in idxs:
-                        filtered_preds.append(preds[idx])
-                else:
-                    # در هر کلاستر فقط بیشترین score بمونه
-                    best_idx = idxs[np.argmax(scores[idxs])]
-                    filtered_preds.append(preds[best_idx])
-#####################################################
+            filtered_preds = []
+            if len(preds) > 0:
+                preds_np = np.array(preds, dtype=object)  # برای راحتی کار با ایندکس‌ها
+                scores = np.array([p[-1] for p in preds])  # آخرین مقدار هر pred، همون score
+                unique_clusters = np.unique(cluster_labels)
+                for cid in unique_clusters:
+                    idxs = np.where(cluster_labels == cid)[0]
+                    if len(idxs) == 0:
+                        continue
+                    if cid == -1:
+                        # نویز DBSCAN، معمولاً اعضای تک‌تایی — همه رو نگه می‌داریم
+                        for idx in idxs:
+                            filtered_preds.append(preds[idx])
+                    else:
+                        # در هر کلاستر فقط بیشترین score بمونه
+                        best_idx = idxs[np.argmax(scores[idxs])]
+                        filtered_preds.append(preds[best_idx])
+    #####################################################
         # import hdbscan
         # db = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=2)
         # cluster_labels = db.fit_predict(clustering_features)
@@ -122,8 +122,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         
 
 
-
-        results[info['img_id'][i]] = preds
+        results[info['img_id'][i]] = filtered_preds
+        # results[info['img_id'][i]] = preds
     return results
 
 
