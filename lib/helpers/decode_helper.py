@@ -85,7 +85,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             # print("Cluster labels for each detection:")
             # print(cluster_labels)
 
-            filtered_preds = []
+            filtered_preds = {}
             if len(preds) > 0:
                 preds_np = np.array(preds, dtype=object)  # برای راحتی کار با ایندکس‌ها
                 scores = np.array([p[-1] for p in preds])  # آخرین مقدار هر pred، همون score
