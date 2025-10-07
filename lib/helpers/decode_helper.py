@@ -82,7 +82,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         if len(clustering_features) >= 2:
             clustering_features = np.array(clustering_features)                                              #extra
             from sklearn.cluster import DBSCAN                
-            db = DBSCAN(eps=0.05, min_samples=2)
+            db = DBSCAN(eps=0.02, min_samples=2)
             cluster_labels = db.fit_predict(clustering_features)
             # print("Cluster labels for each detection:")
             # print(cluster_labels)
