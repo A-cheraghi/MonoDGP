@@ -30,8 +30,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         if std > 0.1:
             new_threshold = mean_score + (std / 10)
         else:
-            new_threshold = mean_score
-
+            new_threshold = threshold
     
 
         for j in range(dets.shape[1]):  # max_dets
