@@ -28,7 +28,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         #         threshold = mean_score
 
         if std > 0.1:
-            new_threshold = mean_score + (std / 10)
+            new_threshold = mean_score + (std / 5)
         else:
             new_threshold = threshold
     
