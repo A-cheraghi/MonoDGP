@@ -109,7 +109,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         nms_tensor = torch.tensor(nms_input)
 
         # 2️⃣ اجرای NMS سه‌بعدی
-        iou_threshold = 0.5  # می‌تونی تغییرش بدی
+        iou_threshold = 0.1  # می‌تونی تغییرش بدی
         filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
 
         # 3️⃣ پیدا کردن ایندکس pred اصلی
