@@ -122,7 +122,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
                         break
 
             # 4️⃣ ساخت لیست pred های باقی مانده بعد از NMS
-            filtered_preds = [preds[i] for i in keep_indices]
+            preds = [preds[i] for i in keep_indices]
 
             # حالا filtered_preds شامل اطلاعات کامل pred های باقی مانده بعد از NMS است
 
@@ -172,8 +172,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         
 
 
-        results[info['img_id'][i]] = filtered_preds
-        # results[info['img_id'][i]] = preds
+        # results[info['img_id'][i]] = filtered_preds
+        results[info['img_id'][i]] = preds
     return results
 
 
