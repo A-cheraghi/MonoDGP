@@ -77,7 +77,54 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
-        
+
+
+
+
+
+        from nms_3d import nms_3d  # فرض نصب پکیج nms-3d
+
+        # ---------- بعد از ساخت preds و clustering_features ----------
+
+        # 1️⃣ ساخت ورودی NMS
+        nms_input = []
+        index_map = []
+
+        for idx, p in enumerate(preds):
+            score = p[-1]              # آخرین المان، score
+            dx, dy, dz = p[6:9]        # ابعاد سه‌بعدی
+            x3d, y3d, z3d = p[9:12]    # مرکز 3D خودرو
+
+            # گوشه‌های جعبه سه‌بعدی
+            x_min = x3d - dx / 2
+            x_max = x3d + dx / 2
+            y_min = y3d - dy / 2
+            y_max = y3d + dy / 2
+            z_min = z3d - dz / 2
+            z_max = z3d + dz / 2
+
+            nms_input.append([score, x_min, y_min, z_min, x_max, y_max, z_max])
+            index_map.append(idx)
+
+        nms_tensor = torch.tensor(nms_input)
+
+        # 2️⃣ اجرای NMS سه‌بعدی
+        iou_threshold = 0.5  # می‌تونی تغییرش بدی
+        filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
+
+        # 3️⃣ پیدا کردن ایندکس pred اصلی
+        keep_indices = []
+        for box in filtered_boxes:
+            for i, b in enumerate(nms_input):
+                if all(abs(box[j] - b[j]) < 1e-6 for j in range(7)):
+                    keep_indices.append(index_map[i])
+                    break
+
+        # 4️⃣ ساخت لیست pred های باقی مانده بعد از NMS
+        filtered_preds = [preds[i] for i in keep_indices]
+
+        # حالا filtered_preds شامل اطلاعات کامل pred های باقی مانده بعد از NMS است
+
         
         # filtered_preds = []
         # if len(clustering_features) >= 2:
@@ -124,8 +171,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         
 
 
-        # results[info['img_id'][i]] = filtered_preds
-        results[info['img_id'][i]] = preds
+        results[info['img_id'][i]] = filtered_preds
+        # results[info['img_id'][i]] = preds
     return results
 
 
