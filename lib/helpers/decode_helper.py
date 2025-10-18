@@ -28,7 +28,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         #         threshold = mean_score
 
         if std > 0.1:
-            new_threshold = mean_score + (std / 10)
+            new_threshold = mean_score + (std / 7)
         else:
             new_threshold = threshold
     
@@ -113,7 +113,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
                 nms_tensor = torch.from_numpy(nms_np)  # CPU tensor float32
 
                 # 3) اجرای NMS (خروجی torch.Tensor روی CPU)
-                iou_threshold = 0.1
+                iou_threshold = 0.5
                 filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
 
                 # مطمئن شو خروجی روی CPU و numpy است
