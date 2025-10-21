@@ -28,7 +28,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         #         threshold = mean_score
 
         if std > 0.1:
-            new_threshold = mean_score + (std / 7)
+            new_threshold = mean_score + (std / 8)
         else:
             new_threshold = threshold
     
@@ -77,93 +77,64 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
-
-
-
-
-
-        from nms_3d import nms_3d  # فرض نصب پکیج nms-3d
-        if len(preds) == 0:
-            filtered_preds = []
-        else:
-            # 1) ساخت nms_input و index_map
-            nms_input = []
-            index_map = []
-            for idx, p in enumerate(preds):
-                score = float(p[-1])
-                dx, dy, dz = [float(x) for x in p[6:9]]
-                x3d, y3d, z3d = [float(x) for x in p[9:12]]
-
-                x_min = x3d - dx / 2
-                x_max = x3d + dx / 2
-                y_min = y3d - dy / 2
-                y_max = y3d + dy / 2
-                z_min = z3d - dz / 2
-                z_max = z3d + dz / 2
-
-                nms_input.append([score, x_min, y_min, z_min, x_max, y_max, z_max])
-                index_map.append(idx)
-
-            # 2) تبدیل به آرایه‌ی numpy یا tensor با dtype مشخص
-            nms_np = np.array(nms_input, dtype=np.float32)
-            # اگر خالی بود، از اجرا جلوگیری کن (اینجا نباید خالی باشه چون قبلا چک کردیم)
-            if nms_np.shape[0] == 0:
-                filtered_preds = []
-            else:
-                nms_tensor = torch.from_numpy(nms_np)  # CPU tensor float32
-
-                # 3) اجرای NMS (خروجی torch.Tensor روی CPU)
-                iou_threshold = 0.5
-                filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
-
-                # مطمئن شو خروجی روی CPU و numpy است
-                if isinstance(filtered_boxes, torch.Tensor):
-                    filtered_np = filtered_boxes.detach().cpu().numpy()
-                else:
-                    filtered_np = np.array(filtered_boxes, dtype=np.float32)
-
-                # 4) پیدا کردن ایندکس‌های متناظر به صورت امن با np.isclose
-                keep_indices = []
-                for fb in filtered_np:  # هر ردیف fb طول 7
-                    # مقایسهٔ همه ردیف‌های nms_np با fb با tolerance
-                    # produces boolean array shape (N,7) then all(axis=1) -> matches per row
-                    matches = np.all(np.isclose(nms_np, fb, atol=1e-5, rtol=1e-6), axis=1)
-                    idxs = np.where(matches)[0]
-                    if idxs.size > 0:
-                        # اگر چند match هست (تقریبا مشابه)، انتخاب اولینِ آنها کافی است
-                        keep_indices.append(index_map[int(idxs[0])])
-                    else:
-                        # اگر هیچ تطابقی پیدا نشد (نادر) می‌تونیم لاگ کنیم یا نادیده بگیریم
-                        # print("Warning: no match for filtered box:", fb)
-                        pass
-
-                # 5) ساخت filtered_preds بر اساس ایندکس‌ها (حفظ ترتیب filtered_boxes)
-                preds = [preds[i] for i in keep_indices]
-
-        
+#####################################################
+        # from nms_3d import nms_3d  
+        # if len(preds) == 0:
+        #     filtered_preds = []
+        # else:
+        #     nms_input = []
+        #     index_map = []
+        #     for idx, p in enumerate(preds):
+        #         score = float(p[-1])
+        #         dx, dy, dz = [float(x) for x in p[6:9]]
+        #         x3d, y3d, z3d = [float(x) for x in p[9:12]]
+        #         x_min = x3d - dx / 2
+        #         x_max = x3d + dx / 2
+        #         y_min = y3d - dy / 2
+        #         y_max = y3d + dy / 2
+        #         z_min = z3d - dz / 2
+        #         z_max = z3d + dz / 2
+        #         nms_input.append([score, x_min, y_min, z_min, x_max, y_max, z_max])
+        #         index_map.append(idx)
+        #     nms_np = np.array(nms_input, dtype=np.float32)
+        #     if nms_np.shape[0] == 0:
+        #         filtered_preds = []
+        #     else:
+        #         nms_tensor = torch.from_numpy(nms_np)  
+        #         iou_threshold = 0.5
+        #         filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
+        #         if isinstance(filtered_boxes, torch.Tensor):
+        #             filtered_np = filtered_boxes.detach().cpu().numpy()
+        #         else:
+        #             filtered_np = np.array(filtered_boxes, dtype=np.float32)
+        #         keep_indices = []
+        #         for fb in filtered_np:  
+        #             matches = np.all(np.isclose(nms_np, fb, atol=1e-5, rtol=1e-6), axis=1)
+        #             idxs = np.where(matches)[0]
+        #             if idxs.size > 0:
+        #                 keep_indices.append(index_map[int(idxs[0])])
+        #             else:
+        #                 pass
+        #         preds = [preds[i] for i in keep_indices]
+#####################################################
         # filtered_preds = []
         # if len(clustering_features) >= 2:
-        #     clustering_features = np.array(clustering_features)                                              #extra
+        #     clustering_features = np.array(clustering_features) 
         #     from sklearn.cluster import DBSCAN                
         #     db = DBSCAN(eps=0.02, min_samples=2)
-        #     cluster_labels = db.fit_predict(clustering_features)
-        #     # print("Cluster labels for each detection:")
-        #     # print(cluster_labels)
-            
+        #     cluster_labels = db.fit_predict(clustering_features)            
         #     if len(preds) > 0:
-        #         preds_np = np.array(preds, dtype=object)  # برای راحتی کار با ایندکس‌ها
-        #         scores = np.array([p[-1] for p in preds])  # آخرین مقدار هر pred، همون score
+        #         preds_np = np.array(preds, dtype=object)  
+        #         scores = np.array([p[-1] for p in preds])  
         #         unique_clusters = np.unique(cluster_labels)
         #         for cid in unique_clusters:
         #             idxs = np.where(cluster_labels == cid)[0]
         #             if len(idxs) == 0:
         #                 continue
         #             if cid == -1:
-        #                 # نویز DBSCAN، معمولاً اعضای تک‌تایی — همه رو نگه می‌داریم
         #                 for idx in idxs:
         #                     filtered_preds.append(preds[idx])
         #             else:
-        #                 # در هر کلاستر فقط بیشترین score بمونه
         #                 best_idx = idxs[np.argmax(scores[idxs])]
         #                 filtered_preds.append(preds[best_idx])
     #####################################################
