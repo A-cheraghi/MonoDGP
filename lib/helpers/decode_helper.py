@@ -101,7 +101,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
                 filtered_preds = []
             else:
                 nms_tensor = torch.from_numpy(nms_np)  
-                iou_threshold = 0.7
+                iou_threshold = 0.8
                 filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
                 if isinstance(filtered_boxes, torch.Tensor):
                     filtered_np = filtered_boxes.detach().cpu().numpy()
