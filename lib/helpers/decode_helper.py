@@ -27,10 +27,10 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         #     if std > 0.1:
         #         threshold = mean_score
 
-        if std > 0.1:
-            new_threshold = mean_score + (std / 8)
-        else:
-            new_threshold = threshold
+        # if std > 0.1:
+        #     new_threshold = mean_score + (std / 8)
+        # else:
+        #     new_threshold = threshold
     
 
         for j in range(dets.shape[1]):  # max_dets
@@ -39,9 +39,11 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score_all.append(score)
             
-            if score < new_threshold:
+            # if score < new_threshold:
+            #     continue
+            if score < threshold:
                 continue
-                
+                            
             # 2d bboxs decoding
             x = dets[i, j, 2] * info['img_size'][i][0]
             y = dets[i, j, 3] * info['img_size'][i][1]
@@ -78,44 +80,44 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
 #####################################################
-        from nms_3d import nms_3d  
-        if len(preds) == 0:
-            filtered_preds = []
-        else:
-            nms_input = []
-            index_map = []
-            for idx, p in enumerate(preds):
-                score = float(p[-1])
-                dx, dy, dz = [float(x) for x in p[6:9]]
-                x3d, y3d, z3d = [float(x) for x in p[9:12]]
-                x_min = x3d - dx / 2
-                x_max = x3d + dx / 2
-                y_min = y3d - dy / 2
-                y_max = y3d + dy / 2
-                z_min = z3d - dz / 2
-                z_max = z3d + dz / 2
-                nms_input.append([score, x_min, y_min, z_min, x_max, y_max, z_max])
-                index_map.append(idx)
-            nms_np = np.array(nms_input, dtype=np.float32)
-            if nms_np.shape[0] == 0:
-                filtered_preds = []
-            else:
-                nms_tensor = torch.from_numpy(nms_np)  
-                iou_threshold = 0.9
-                filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
-                if isinstance(filtered_boxes, torch.Tensor):
-                    filtered_np = filtered_boxes.detach().cpu().numpy()
-                else:
-                    filtered_np = np.array(filtered_boxes, dtype=np.float32)
-                keep_indices = []
-                for fb in filtered_np:  
-                    matches = np.all(np.isclose(nms_np, fb, atol=1e-5, rtol=1e-6), axis=1)
-                    idxs = np.where(matches)[0]
-                    if idxs.size > 0:
-                        keep_indices.append(index_map[int(idxs[0])])
-                    else:
-                        pass
-                preds = [preds[i] for i in keep_indices]
+        # from nms_3d import nms_3d  
+        # if len(preds) == 0:
+        #     filtered_preds = []
+        # else:
+        #     nms_input = []
+        #     index_map = []
+        #     for idx, p in enumerate(preds):
+        #         score = float(p[-1])
+        #         dx, dy, dz = [float(x) for x in p[6:9]]
+        #         x3d, y3d, z3d = [float(x) for x in p[9:12]]
+        #         x_min = x3d - dx / 2
+        #         x_max = x3d + dx / 2
+        #         y_min = y3d - dy / 2
+        #         y_max = y3d + dy / 2
+        #         z_min = z3d - dz / 2
+        #         z_max = z3d + dz / 2
+        #         nms_input.append([score, x_min, y_min, z_min, x_max, y_max, z_max])
+        #         index_map.append(idx)
+        #     nms_np = np.array(nms_input, dtype=np.float32)
+        #     if nms_np.shape[0] == 0:
+        #         filtered_preds = []
+        #     else:
+        #         nms_tensor = torch.from_numpy(nms_np)  
+        #         iou_threshold = 0.9
+        #         filtered_boxes = nms_3d(nms_tensor, iou_threshold=iou_threshold)
+        #         if isinstance(filtered_boxes, torch.Tensor):
+        #             filtered_np = filtered_boxes.detach().cpu().numpy()
+        #         else:
+        #             filtered_np = np.array(filtered_boxes, dtype=np.float32)
+        #         keep_indices = []
+        #         for fb in filtered_np:  
+        #             matches = np.all(np.isclose(nms_np, fb, atol=1e-5, rtol=1e-6), axis=1)
+        #             idxs = np.where(matches)[0]
+        #             if idxs.size > 0:
+        #                 keep_indices.append(index_map[int(idxs[0])])
+        #             else:
+        #                 pass
+        #         preds = [preds[i] for i in keep_indices]
 #####################################################
         # filtered_preds = []
         # if len(clustering_features) >= 2:
@@ -152,7 +154,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # std = np.std(score_all_np)
         # print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
 #####################################################
-        # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
+        print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
         
 
