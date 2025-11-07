@@ -16,21 +16,15 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
     results = {}
     for i in range(dets.shape[0]):  # batch
         preds = []
-
         score_all=[]
         clustering_features = []                    #extra
         mean_score = np.mean(dets[i, :, 1])
         std = np.std(dets[i, :, 1])
-        # if mean_score < 0.01:
-        #     threshold = 0.2
-        # else:
-        #     if std > 0.1:
-        #         threshold = mean_score
 
-        # if std > 0.1:
-        #     new_threshold = mean_score + (std / 8)
-        # else:
-        #     new_threshold = threshold
+        if std > 0.1:
+            new_threshold = mean_score + (std / 8)
+        else:
+            new_threshold = threshold
     
 
         for j in range(dets.shape[1]):  # max_dets
@@ -39,9 +33,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score_all.append(score)
             
-            # if score < new_threshold:
-            #     continue
-            if score < threshold:
+            if score < new_threshold:
                 continue
                             
             # 2d bboxs decoding
@@ -156,29 +148,21 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 #####################################################
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
-        
-        import json, os
-        save_path = "/kaggle/working/conf_data.json"
-        if os.path.exists(save_path):
-            with open(save_path, "r") as f:
-                data = json.load(f)
-        else:
-            data = {}
-        img_id = str(info['img_id'][i])
-        scores = sorted(score_all, reverse=True)
-        scores = [float(x) for x in scores]
-        data[img_id] = {"scores": scores}
-        with open(save_path, "w") as f:
-            json.dump(data, f)
-        # print(f"✅ ذخیره شد: {img_id} → {len(scores)} scores")
-
-
-
-
-
-
-
-
+#####################################################
+        # import json, os
+        # save_path = "/kaggle/working/conf_data.json"
+        # if os.path.exists(save_path):
+        #     with open(save_path, "r") as f:
+        #         data = json.load(f)
+        # else:
+        #     data = {}
+        # img_id = str(info['img_id'][i])
+        # scores = sorted(score_all, reverse=True)
+        # scores = [float(x) for x in scores]
+        # data[img_id] = {"scores": scores}
+        # with open(save_path, "w") as f:
+        #     json.dump(data, f)
+#####################################################
         # results[info['img_id'][i]] = filtered_preds
         results[info['img_id'][i]] = preds
     return results
