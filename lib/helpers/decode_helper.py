@@ -157,7 +157,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
         
-        import json, os, numpy as np
+        import json, os
         save_path = "/kaggle/working/conf_data.json"
         if os.path.exists(save_path):
             with open(save_path, "r") as f:
