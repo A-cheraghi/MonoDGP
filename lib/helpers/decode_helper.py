@@ -154,9 +154,30 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # std = np.std(score_all_np)
         # print(f"image  {info['img_id'][i]} _ mean => {np.mean(score_all):0.3f} _ mad => {robust_value:0.3f} _ STD => {std:0.3f}\n")          
 #####################################################
-        print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
+        # print(f"image  {info['img_id'][i]}\n" , sorted(score_all, reverse=True))          
         # print(f"image  {info['img_id'][i]}\n" , np.mean(score_all))     
         
+        import json, os
+
+        save_path = "/kaggle/working/conf_data.json"
+
+        # اگر از قبل وجود داشت، بخون
+        if os.path.exists(save_path):
+            with open(save_path, "r") as f:
+                data = json.load(f)
+        else:
+            data = {}
+        img_id = str(info['img_id'][i])      
+        scores = sorted(score_all, reverse=True)
+        data[img_id] = {"scores": scores}
+        with open(save_path, "w") as f:
+            json.dump(data, f)
+        # print(f"✅ ذخیره شد: {img_id} → {len(scores)} scores")
+
+
+
+
+
 
 
         # results[info['img_id'][i]] = filtered_preds
