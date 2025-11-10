@@ -26,79 +26,155 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         else:
             new_threshold = threshold
 ###########################################################################################################################    
-        class MLP(nn.Module):
-            def __init__(self, input_dim=59):
-                super().__init__()
-                self.model = nn.Sequential(
-                    nn.Linear(input_dim, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, 64),
-                    nn.ReLU(),
-                    nn.Linear(64, 32),
-                    nn.ReLU(),
-                    nn.Linear(32, 1),
-                    nn.Sigmoid()
-                )
+        # class MLP(nn.Module):
+        #     def __init__(self, input_dim=59):
+        #         super().__init__()
+        #         self.model = nn.Sequential(
+        #             nn.Linear(input_dim, 128),
+        #             nn.ReLU(),
+        #             nn.Linear(128, 64),
+        #             nn.ReLU(),
+        #             nn.Linear(64, 32),
+        #             nn.ReLU(),
+        #             nn.Linear(32, 1),
+        #             nn.Sigmoid()
+        #         )
 
-            def forward(self, x):
-                return self.model(x)
-
-
-        # ======================================================
-        # تابع مستقل برای پیش‌بینی آستانه
-        # ======================================================
-        def predict_threshold(conf_scores, model_path="/kaggle/working/mlp_threshold_model_best.pth"):
-            """
-            conf_scores: آرایه‌ای از confidenceهای پیش‌بینی (مثلاً ۵۰ عدد)
-            خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
-            """
-            conf_scores = np.array(conf_scores, dtype=np.float32)
-            if len(conf_scores) < 50:
-                conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode="constant")
-            else:
-                conf_scores = conf_scores[:50]
-
-            # استخراج ویژگی‌ها (۹ ویژگی آماری)
-            mean_all = np.mean(conf_scores)
-            std_all = np.std(conf_scores)
-            max_val = np.max(conf_scores)
-            below_02 = conf_scores[conf_scores < 0.2]
-            mean_sub_0_2 = np.mean(below_02) if len(below_02) > 0 else 0
-            std_sub_0_2 = np.std(below_02) if len(below_02) > 0 else 0
-            mad_sub_0_2 = np.median(np.abs(below_02 - np.median(below_02))) if len(below_02) > 0 else 0
-            count_gt_0_01 = np.mean(conf_scores > 0.01)
-            skewness = ((conf_scores - mean_all)**3).mean() / (std_all**3 + 1e-6)
-            kurtosis = ((conf_scores - mean_all)**4).mean() / (std_all**4 + 1e-6)
-
-            stats_features = [
-                mean_all, std_all, mean_sub_0_2, std_sub_0_2,
-                max_val, count_gt_0_01, skewness, kurtosis, mad_sub_0_2
-            ]
-
-            features = np.concatenate([conf_scores, stats_features]).reshape(1, -1)
-
-            # ساخت مدل و بارگذاری وزن‌ها
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            model = MLP(input_dim=59).to(device)
-            model.load_state_dict(torch.load(model_path, map_location=device))
-            model.eval()
-
-            # اجرای پیش‌بینی
-            with torch.no_grad():
-                x_tensor = torch.tensor(features, dtype=torch.float32).to(device)
-                threshold = model(x_tensor).item()
-
-            return threshold
+        #     def forward(self, x):
+        #         return self.model(x)
 
 
-        # ======================================================
-        # 🔹 استفاده در هر جای کد
-        # ======================================================
-        # مثال ساده (می‌تونی حذفش کنی)
-        conf_scores = np.sort(dets[i, :, 1])[::-1]
-        new_threshold = predict_threshold(conf_scores, "/kaggle/working/mlp_threshold_model_best.pth")
-        # print("🔹 Predicted threshold:", round(threshold, 4))
+        # # ======================================================
+        # # تابع مستقل برای پیش‌بینی آستانه
+        # # ======================================================
+        # def predict_threshold(conf_scores, model_path="/kaggle/working/mlp_threshold_model_best.pth"):
+        #     """
+        #     conf_scores: آرایه‌ای از confidenceهای پیش‌بینی (مثلاً ۵۰ عدد)
+        #     خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
+        #     """
+        #     conf_scores = np.array(conf_scores, dtype=np.float32)
+        #     if len(conf_scores) < 50:
+        #         conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode="constant")
+        #     else:
+        #         conf_scores = conf_scores[:50]
+
+        #     # استخراج ویژگی‌ها (۹ ویژگی آماری)
+        #     mean_all = np.mean(conf_scores)
+        #     std_all = np.std(conf_scores)
+        #     max_val = np.max(conf_scores)
+        #     below_02 = conf_scores[conf_scores < 0.2]
+        #     mean_sub_0_2 = np.mean(below_02) if len(below_02) > 0 else 0
+        #     std_sub_0_2 = np.std(below_02) if len(below_02) > 0 else 0
+        #     mad_sub_0_2 = np.median(np.abs(below_02 - np.median(below_02))) if len(below_02) > 0 else 0
+        #     count_gt_0_01 = np.mean(conf_scores > 0.01)
+        #     skewness = ((conf_scores - mean_all)**3).mean() / (std_all**3 + 1e-6)
+        #     kurtosis = ((conf_scores - mean_all)**4).mean() / (std_all**4 + 1e-6)
+
+        #     stats_features = [
+        #         mean_all, std_all, mean_sub_0_2, std_sub_0_2,
+        #         max_val, count_gt_0_01, skewness, kurtosis, mad_sub_0_2
+        #     ]
+
+        #     features = np.concatenate([conf_scores, stats_features]).reshape(1, -1)
+
+        #     # ساخت مدل و بارگذاری وزن‌ها
+        #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        #     model = MLP(input_dim=59).to(device)
+        #     model.load_state_dict(torch.load(model_path, map_location=device))
+        #     model.eval()
+
+        #     # اجرای پیش‌بینی
+        #     with torch.no_grad():
+        #         x_tensor = torch.tensor(features, dtype=torch.float32).to(device)
+        #         threshold = model(x_tensor).item()
+
+        #     return threshold
+
+
+        # # ======================================================
+        # # 🔹 استفاده در هر جای کد
+        # # ======================================================
+        # # مثال ساده (می‌تونی حذفش کنی)
+        # conf_scores = np.sort(dets[i, :, 1])[::-1]
+        # new_threshold = predict_threshold(conf_scores, "/kaggle/working/mlp_threshold_model_best.pth")
+        # # print("🔹 Predicted threshold:", round(threshold, 4))
 ###########################################################################################################################    
+# ======================================================
+# تعریف کامل مدل DeepSets (همان معماری آموزش)
+# ======================================================
+class DeepSets(nn.Module):
+    def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
+        super().__init__()
+
+        self.phi = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, embed_dim),
+            nn.ReLU(),
+            nn.BatchNorm1d(50)
+        )
+
+        self.rho = nn.Sequential(
+            nn.Linear(embed_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = x.unsqueeze(-1)       # [batch, 50, 1]
+        h = self.phi(x)           # [batch, 50, embed_dim]
+        h = h.mean(dim=1)         # [batch, embed_dim]
+        out = self.rho(h)         # [batch, 1]
+        return out
+
+
+# ======================================================
+# تابع ساده برای لود مدل و پیش‌بینی
+# ======================================================
+def predict_threshold_deepsets(conf_scores, model_path):
+    """
+    conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
+    model_path: مسیر فایل مدل ذخیره‌شده (.pth)
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # شبکه را بساز و وزن‌ها را لود کن
+    model = DeepSets().to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
+    # آماده‌سازی ورودی
+    conf_scores = np.array(conf_scores, dtype=np.float32)
+    conf_scores = np.sort(conf_scores)[::-1]  # مرتب از بزرگ به کوچک
+    if len(conf_scores) < 50:
+        conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
+
+    # تبدیل به تنسور و reshape برای batch=1
+    x = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0).to(device)
+
+    # پیش‌بینی
+    with torch.no_grad():
+        threshold = model(x).item()
+
+    return threshold
+
+
+# ======================================================
+# مثال استفاده:
+# ======================================================
+# فرض کن dets[i, :, 1] خروجی confidenceهای شبکه‌ست
+# dets[i, :, 1] باید آرایه numpy باشه
+# به عنوان مثال:
+# dets = np.random.rand(1, 60, 2)   # فقط برای تست ساختگی
+# confs = dets[0, :, 1]
+# threshold = predict_threshold_deepsets(confs, "/kaggle/working/deepsets_threshold_model_best.pth")
+# print("Predicted threshold:", threshold)
 
 
 
