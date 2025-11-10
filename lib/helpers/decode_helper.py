@@ -96,7 +96,6 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # ======================================================
         # مثال ساده (می‌تونی حذفش کنی)
         conf_scores = np.sort(dets[i, :, 1])[::-1]
-        print(conf_scores)
         new_threshold = predict_threshold(conf_scores, "/kaggle/working/mlp_threshold_model_best.pth")
         # print("🔹 Predicted threshold:", round(threshold, 4))
 ###########################################################################################################################    
