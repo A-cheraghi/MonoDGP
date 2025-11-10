@@ -149,8 +149,6 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             if len(conf_scores) < 50:
                 conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
 
-            # تبدیل به تنسور و reshape برای batch=1
-            x_tensor = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0).to(device)
 
             # ساخت مدل و بارگذاری وزن‌ها
             model = DeepSets().to(device)
@@ -159,6 +157,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             # پیش‌بینی
             with torch.no_grad():
+                x_tensor = torch.tensor(conf_scores, dtype=torch.float32).to(device)
                 threshold = model(x_tensor).item()
 
             return threshold
