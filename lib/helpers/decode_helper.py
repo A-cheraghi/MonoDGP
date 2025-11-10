@@ -100,7 +100,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # # print("🔹 Predicted threshold:", round(threshold, 4))
 ###########################################################################################################################    
         # ======================================================
-        # تعریف مدل DeepSets (همان معماری آموزش)
+        # تعریف مدل DeepSets
         # ======================================================
         class DeepSets(nn.Module):
             def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
@@ -111,7 +111,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
                     nn.ReLU(),
                     nn.Linear(hidden_dim, embed_dim),
                     nn.ReLU(),
-                    nn.BatchNorm1d(50)
+                    nn.BatchNorm1d(50)  # مطابق آموزش اصلی
                 )
 
                 self.rho = nn.Sequential(
@@ -127,10 +127,11 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
                 )
 
             def forward(self, x):
-                x = x.unsqueeze(-1)       # [batch, 50, 1]
-                h = self.phi(x)           # [batch, 50, embed_dim]
-                h = h.mean(dim=1)         # [batch, embed_dim]
-                out = self.rho(h)         # [batch, 1]
+                # x: [batch, 50]
+                x = x.unsqueeze(-1)    # [batch, 50, 1]
+                h = self.phi(x)        # [batch, 50, embed_dim]
+                h = h.mean(dim=1)      # [batch, embed_dim]
+                out = self.rho(h)      # [batch, 1]
                 return out
 
         # ======================================================
@@ -141,23 +142,24 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
             خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
             """
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-            # مرتب‌سازی نزولی و padding در صورت نیاز
+            # مرتب‌سازی نزولی و padding
             conf_scores = np.array(conf_scores, dtype=np.float32)
             conf_scores = np.sort(conf_scores)[::-1]
             if len(conf_scores) < 50:
                 conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
 
+            # تبدیل به تنسور با همان ساختار MLP (batch=1)
+            x_tensor = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0)  # [1, 50]
 
-            # ساخت مدل و بارگذاری وزن‌ها
+            # ساخت مدل و لود وزن‌ها
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             model = DeepSets().to(device)
             model.load_state_dict(torch.load(model_path, map_location=device))
             model.eval()
+            x_tensor = x_tensor.to(device)
 
             # پیش‌بینی
             with torch.no_grad():
-                x_tensor = torch.tensor(conf_scores, dtype=torch.float32).to(device)
                 threshold = model(x_tensor).item()
 
             return threshold
@@ -165,9 +167,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # ======================================================
         # مثال استفاده:
         # ======================================================
-
-        confs = np.sort(dets[i, :, 1])[::-1]
-        new_threshold = predict_threshold_deepsets(confs, "/kaggle/working/deepsets_threshold_model_best.pth")
+        conf_scores = dets[i, :, 1]  # numpy array
+        new_threshold = predict_threshold_deepsets(conf_scores)
         # print("🔹 Predicted threshold:", new_threshold)
 
 
