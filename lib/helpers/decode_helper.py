@@ -99,82 +99,78 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # new_threshold = predict_threshold(conf_scores, "/kaggle/working/mlp_threshold_model_best.pth")
         # # print("🔹 Predicted threshold:", round(threshold, 4))
 ###########################################################################################################################    
-# ======================================================
-# تعریف کامل مدل DeepSets (همان معماری آموزش)
-# ======================================================
-class DeepSets(nn.Module):
-    def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
-        super().__init__()
+        # ======================================================
+        # تعریف مدل DeepSets (همان معماری آموزش)
+        # ======================================================
+        class DeepSets(nn.Module):
+            def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
+                super().__init__()
 
-        self.phi = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, embed_dim),
-            nn.ReLU(),
-            nn.BatchNorm1d(50)
-        )
+                self.phi = nn.Sequential(
+                    nn.Linear(input_dim, hidden_dim),
+                    nn.ReLU(),
+                    nn.Linear(hidden_dim, embed_dim),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(50)
+                )
 
-        self.rho = nn.Sequential(
-            nn.Linear(embed_dim, 256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1),
-            nn.Sigmoid()
-        )
+                self.rho = nn.Sequential(
+                    nn.Linear(embed_dim, 256),
+                    nn.ReLU(),
+                    nn.Dropout(0.3),
+                    nn.Linear(256, 128),
+                    nn.ReLU(),
+                    nn.Linear(128, 64),
+                    nn.ReLU(),
+                    nn.Linear(64, 1),
+                    nn.Sigmoid()
+                )
 
-    def forward(self, x):
-        x = x.unsqueeze(-1)       # [batch, 50, 1]
-        h = self.phi(x)           # [batch, 50, embed_dim]
-        h = h.mean(dim=1)         # [batch, embed_dim]
-        out = self.rho(h)         # [batch, 1]
-        return out
+            def forward(self, x):
+                x = x.unsqueeze(-1)       # [batch, 50, 1]
+                h = self.phi(x)           # [batch, 50, embed_dim]
+                h = h.mean(dim=1)         # [batch, embed_dim]
+                out = self.rho(h)         # [batch, 1]
+                return out
 
+        # ======================================================
+        # تابع مستقل برای پیش‌بینی آستانه
+        # ======================================================
+        def predict_threshold_deepsets(conf_scores, model_path="/kaggle/working/deepsets_threshold_model_best.pth"):
+            """
+            conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
+            خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
+            """
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ======================================================
-# تابع ساده برای لود مدل و پیش‌بینی
-# ======================================================
-def predict_threshold_deepsets(conf_scores, model_path):
-    """
-    conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
-    model_path: مسیر فایل مدل ذخیره‌شده (.pth)
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # مرتب‌سازی نزولی و padding در صورت نیاز
+            conf_scores = np.array(conf_scores, dtype=np.float32)
+            conf_scores = np.sort(conf_scores)[::-1]
+            if len(conf_scores) < 50:
+                conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
 
-    # شبکه را بساز و وزن‌ها را لود کن
-    model = DeepSets().to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
+            # تبدیل به تنسور و reshape برای batch=1
+            x_tensor = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0).to(device)
 
-    # آماده‌سازی ورودی
-    conf_scores = np.array(conf_scores, dtype=np.float32)
-    conf_scores = np.sort(conf_scores)[::-1]  # مرتب از بزرگ به کوچک
-    if len(conf_scores) < 50:
-        conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
+            # ساخت مدل و بارگذاری وزن‌ها
+            model = DeepSets().to(device)
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model.eval()
 
-    # تبدیل به تنسور و reshape برای batch=1
-    x = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0).to(device)
+            # پیش‌بینی
+            with torch.no_grad():
+                threshold = model(x_tensor).item()
 
-    # پیش‌بینی
-    with torch.no_grad():
-        threshold = model(x).item()
+            return threshold
 
-    return threshold
+        # ======================================================
+        # مثال استفاده:
+        # ======================================================
 
+        confs = np.sort(dets[i, :, 1])[::-1]
+        new_threshold = predict_threshold_deepsets(confs, "/kaggle/working/deepsets_threshold_model_best.pth")
+        # print("🔹 Predicted threshold:", new_threshold)
 
-# ======================================================
-# مثال استفاده:
-# ======================================================
-# فرض کن dets[i, :, 1] خروجی confidenceهای شبکه‌ست
-# dets[i, :, 1] باید آرایه numpy باشه
-# به عنوان مثال:
-# dets = np.random.rand(1, 60, 2)   # فقط برای تست ساختگی
-# confs = dets[0, :, 1]
-# threshold = predict_threshold_deepsets(confs, "/kaggle/working/deepsets_threshold_model_best.pth")
-# print("Predicted threshold:", threshold)
 
 
 
