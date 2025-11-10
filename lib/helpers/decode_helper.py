@@ -97,6 +97,8 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # مثال ساده (می‌تونی حذفش کنی)
         conf_scores = np.sort(dets[i, :, 1])[::-1]
         new_threshold = predict_threshold(conf_scores, "/kaggle/working/mlp_threshold_model_best.pth")
+        if new_threshold > 0.2:
+            new_threshold=0.2
 ###########################################################################################################################    
         # class DeepSets(nn.Module):
         #     def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
