@@ -100,74 +100,74 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
         # if new_threshold > 0.2:
         #     new_threshold=0.2
 ###########################################################################################################################    
-        class DeepSets(nn.Module):
-            def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
-                super().__init__()
+        # class DeepSets(nn.Module):
+        #     def __init__(self, input_dim=1, hidden_dim=128, embed_dim=256):
+        #         super().__init__()
 
-                self.phi = nn.Sequential(
-                    nn.Linear(input_dim, hidden_dim),
-                    nn.ReLU(),
-                    nn.Linear(hidden_dim, embed_dim),
-                    nn.ReLU(),
-                    nn.BatchNorm1d(50)
-                )
+        #         self.phi = nn.Sequential(
+        #             nn.Linear(input_dim, hidden_dim),
+        #             nn.ReLU(),
+        #             nn.Linear(hidden_dim, embed_dim),
+        #             nn.ReLU(),
+        #             nn.BatchNorm1d(50)
+        #         )
 
-                self.rho = nn.Sequential(
-                    nn.Linear(embed_dim, 256),
-                    nn.ReLU(),
-                    nn.Dropout(0.3),
-                    nn.Linear(256, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, 64),
-                    nn.ReLU(),
-                    nn.Linear(64, 1),
-                    nn.Sigmoid()
-                )
+        #         self.rho = nn.Sequential(
+        #             nn.Linear(embed_dim, 256),
+        #             nn.ReLU(),
+        #             nn.Dropout(0.3),
+        #             nn.Linear(256, 128),
+        #             nn.ReLU(),
+        #             nn.Linear(128, 64),
+        #             nn.ReLU(),
+        #             nn.Linear(64, 1),
+        #             nn.Sigmoid()
+        #         )
 
-            def forward(self, x):
-                x = x.unsqueeze(-1)   # [batch, 50, 1]
-                h = self.phi(x)       # [batch, 50, embed_dim]
-                h = h.mean(dim=1)     # [batch, embed_dim]
-                out = self.rho(h)     # [batch, 1]
-                return out
+        #     def forward(self, x):
+        #         x = x.unsqueeze(-1)   # [batch, 50, 1]
+        #         h = self.phi(x)       # [batch, 50, embed_dim]
+        #         h = h.mean(dim=1)     # [batch, embed_dim]
+        #         out = self.rho(h)     # [batch, 1]
+        #         return out
 
-        # ======================================================
-        # تابع مستقل برای پیش‌بینی آستانه
-        # ======================================================
-        def predict_threshold_deepsets(conf_scores, model_path="/kaggle/working/deepsets_threshold_model_best.pth"):
-            """
-            conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
-            خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
-            """
+        # # ======================================================
+        # # تابع مستقل برای پیش‌بینی آستانه
+        # # ======================================================
+        # def predict_threshold_deepsets(conf_scores, model_path="/kaggle/working/deepsets_threshold_model_best.pth"):
+        #     """
+        #     conf_scores: آرایه ۵۰تایی از مقادیر confidence (numpy یا list)
+        #     خروجی: مقدار آستانه پیش‌بینی‌شده بین ۰ و ۱
+        #     """
 
-            # مرتب‌سازی نزولی و ساخت کپی برای جلوگیری از stride منفی
-            conf_scores = np.array(conf_scores, dtype=np.float32)
-            conf_scores = np.sort(conf_scores)[::-1].copy()  # ← مهم: copy()
+        #     # مرتب‌سازی نزولی و ساخت کپی برای جلوگیری از stride منفی
+        #     conf_scores = np.array(conf_scores, dtype=np.float32)
+        #     conf_scores = np.sort(conf_scores)[::-1].copy()  # ← مهم: copy()
 
-            if len(conf_scores) < 50:
-                conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
+        #     if len(conf_scores) < 50:
+        #         conf_scores = np.pad(conf_scores, (0, 50 - len(conf_scores)), mode='constant')
 
-            # تبدیل به تنسور، بدون هیچ دستکاری اضافی
-            x_tensor = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0)  # [1, 50]
+        #     # تبدیل به تنسور، بدون هیچ دستکاری اضافی
+        #     x_tensor = torch.tensor(conf_scores, dtype=torch.float32).unsqueeze(0)  # [1, 50]
 
-            # ساخت مدل و لود وزن‌ها
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            model = DeepSets().to(device)
-            model.load_state_dict(torch.load(model_path, map_location=device))
-            model.eval()
-            x_tensor = x_tensor.to(device)
+        #     # ساخت مدل و لود وزن‌ها
+        #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        #     model = DeepSets().to(device)
+        #     model.load_state_dict(torch.load(model_path, map_location=device))
+        #     model.eval()
+        #     x_tensor = x_tensor.to(device)
 
-            # پیش‌بینی
-            with torch.no_grad():
-                threshold = model(x_tensor).item()
+        #     # پیش‌بینی
+        #     with torch.no_grad():
+        #         threshold = model(x_tensor).item()
 
-            return threshold
+        #     return threshold
 
 
-        conf_scores = dets[i, :, 1]
-        new_threshold = predict_threshold_deepsets(conf_scores)
-        if new_threshold > 0.2:
-            new_threshold=0.2
+        # conf_scores = dets[i, :, 1]
+        # new_threshold = predict_threshold_deepsets(conf_scores)
+        # if new_threshold > 0.2:
+        #     new_threshold=0.2
 ###########################################################################################################################
         for j in range(dets.shape[1]):  # max_dets
             cls_id = int(dets[i, j, 0])
@@ -209,7 +209,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             ry = calibs[i].alpha2ry(alpha, x)
 
 
-            score = score * dets[i, j, -1]
+            # score = score * dets[i, j, -1]
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             clustering_features.append(features)                                                         #extra
