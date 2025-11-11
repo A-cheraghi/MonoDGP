@@ -208,8 +208,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             alpha_cos = (np.cos(alpha) + 1) / 2                  #extra
             ry = calibs[i].alpha2ry(alpha, x)
 
-            if score < 0.2:
-                score = score * 2
+
             score = score * dets[i, j, -1]
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
             features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
