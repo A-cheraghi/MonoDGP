@@ -175,7 +175,9 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score_all.append(score)
             
-            if score < new_threshold:
+            # if score < new_threshold:
+            if score < 0:
+
                 continue
                             
             # 2d bboxs decoding
@@ -209,22 +211,22 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             ry = calibs[i].alpha2ry(alpha, x)
 
 
-            score = score * dets[i, j, -1]
+            # score = score * dets[i, j, -1]
             preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
 ##########################################################################################################
-            # # ذخیره فایل خروجی بدون گرد شدن نمره های اعتماد در مسیر مشخص فقط خط ضریب نمره انکامنت شده
-            # import os
-            # output_dir = '/kaggle/working/out'
-            # os.makedirs(output_dir, exist_ok=True)
-            # output_path = os.path.join(output_dir, '{:06d}.txt'.format(info['img_id'][i]))
-            # with open(output_path, 'w') as f:
-            #     for pred in preds:
-            #         class_name = 'Car'
-            #         f.write(f'{class_name} 0.0 0')
-            #         for val in pred[1:-1]:
-            #             f.write(f' {val:.2f}')
-            #         score = pred[-1]
-            #         f.write(f' {score}\n')
+            # ذخیره فایل خروجی بدون گرد شدن نمره های اعتماد در مسیر مشخص فقط خط ضریب نمره انکامنت شده
+            import os
+            output_dir = '/kaggle/working/out'
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, '{:06d}.txt'.format(info['img_id'][i]))
+            with open(output_path, 'w') as f:
+                for pred in preds:
+                    class_name = 'Car'
+                    f.write(f'{class_name} 0.0 0')
+                    for val in pred[1:-1]:
+                        f.write(f' {val:.2f}')
+                    score = pred[-1]
+                    f.write(f' {score}\n')
 ##########################################################################################################
             # features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
             # clustering_features.append(features)                                                         #extra
