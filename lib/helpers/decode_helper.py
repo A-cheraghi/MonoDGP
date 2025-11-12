@@ -175,7 +175,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             score_all.append(score)
             
-            if score < new_threshold:
+            if score < 0:
                 continue
                             
             # 2d bboxs decoding
