@@ -17,7 +17,7 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
     for i in range(dets.shape[0]):  # batch
         preds = []
         score_all=[]
-        clustering_features = []                    #extra
+        # clustering_features = []                    #extra
         mean_score = np.mean(dets[i, :, 1])
         std = np.std(dets[i, :, 1])
 
@@ -187,9 +187,9 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
 
             # 3d bboxs decoding
             # depth decoding
-            max_depth = dets[i, :, 6].max()                 #extra
+            # max_depth = dets[i, :, 6].max()                 #extra
             depth = dets[i, j, 6]
-            depth_norm = depth / max_depth                  #extra
+            # depth_norm = depth / max_depth                  #extra
             # dimensions decoding
             dimensions = dets[i, j, 31:34]
             dimensions += cls_mean_size[int(cls_id)]
@@ -197,22 +197,31 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             # positions decoding
             x3d = dets[i, j, 34] * info['img_size'][i][0]
             y3d = dets[i, j, 35] * info['img_size'][i][1]
-            xs3d_cluster = dets[i, j, 34]                   #extra
-            ys3d_cluster = dets[i, j, 35]                   #extra 
+            # xs3d_cluster = dets[i, j, 34]                   #extra
+            # ys3d_cluster = dets[i, j, 35]                   #extra 
             locations = calibs[i].img_to_rect(x3d, y3d, depth).reshape(-1)
             locations[1] += dimensions[0] / 2
 
             # heading angle decoding
             alpha = get_heading_angle(dets[i, j, 7:31]) 
-            alpha_sin = (np.sin(alpha) + 1) / 2                  #extra
-            alpha_cos = (np.cos(alpha) + 1) / 2                  #extra
+            # alpha_sin = (np.sin(alpha) + 1) / 2                  #extra
+            # alpha_cos = (np.cos(alpha) + 1) / 2                  #extra
             ry = calibs[i].alpha2ry(alpha, x)
 
 
-            score = score * dets[i, j, -1]
-            preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
-            features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
-            clustering_features.append(features)                                                         #extra
+            # score = score * dets[i, j, -1]
+            # preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
+
+
+            pred_values = [cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score]
+            pred_values_str = [str(v) for v in pred_values]
+            preds.append(pred_values_str)
+
+
+
+            
+            # features = [xs3d_cluster, ys3d_cluster, depth_norm, alpha_sin, alpha_cos]                    #extra
+            # clustering_features.append(features)                                                         #extra
 #####################################################
         # from nms_3d import nms_3d  
         # if len(preds) == 0:
