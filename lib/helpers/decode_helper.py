@@ -209,13 +209,36 @@ def decode_detections(dets, info, calibs, cls_mean_size, threshold):
             ry = calibs[i].alpha2ry(alpha, x)
 
 
-            # score = score * dets[i, j, -1]
-            # preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
+            score = score * dets[i, j, -1]
+            preds.append([cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score])
+
+            import os
+
+            # مسیر خروجی ثابت
+            output_dir = '/kaggle/working/out'
+            os.makedirs(output_dir, exist_ok=True)
+
+            # اسم فایل بر اساس img_id
+            output_path = os.path.join(output_dir, '{:06d}.txt'.format(info['img_id'][i]))
+
+            with open(output_path, 'w') as f:
+                for pred in preds:
+                    # چون فقط خودرو داریم
+                    class_name = 'Car'
+                    f.write(f'{class_name} 0.0 0')
+
+                    # همه مقادیر به جز score با دو رقم اعشار
+                    for val in pred[1:-1]:
+                        f.write(f' {val:.2f}')
+
+                    # آخرین مقدار (score) بدون گرد شدن
+                    score = pred[-1]
+                    f.write(f' {score}\n')
 
 
-            pred_values = [cls_id, alpha] + bbox + dimensions.tolist() + locations.tolist() + [ry, score]
-            pred_values_str = [str(v) for v in pred_values]
-            preds.append(pred_values_str)
+
+
+
 
 
 
