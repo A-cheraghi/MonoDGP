@@ -1,8 +1,8 @@
 import numpy as np
 import numba
 import io as sysio
-# from .rotate_iou import rotate_iou_gpu_eval
-from rotate_iou import rotate_iou_gpu_eval
+from .rotate_iou import rotate_iou_gpu_eval
+
 DISTANCE_COVER = False
 
 
